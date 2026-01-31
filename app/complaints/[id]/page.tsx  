@@ -1,0 +1,72 @@
+import { createSupabaseServer } from "@/lib/supabase/server";
+import ComplaintStatusBadge from "@/components/complaints/ComplaintStatusBadge";
+import UpvoteButton from "@/components/complaints/UpvoteButton";
+
+export default async function ComplaintDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const supabase = createSupabaseServer();
+
+  const { data: complaint, error } = await supabase
+    .from("complaints")
+    .select(`
+      id,
+      description,
+      status,
+      severity,
+      raised_at,
+      media_urls,
+      location,
+      upvotes:upvotes(count)
+    `)
+    .eq("id", params.id)
+    .single();
+
+  if (error || !complaint) {
+    return <p className="text-red-500">Complaint not found</p>;
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto py-10 space-y-6">
+      <div className="flex justify-between items-center">
+        <ComplaintStatusBadge status={complaint.status} />
+        <span className="text-sm text-gray-400">
+          {new Date(complaint.raised_at).toLocaleString()}
+        </span>
+      </div>
+
+      <p className="text-gray-800 text-base">
+        {complaint.description}
+      </p>
+
+      <div className="flex justify-between items-center pt-4 border-t">
+        <span className="text-sm text-gray-500">
+          Severity: {complaint.severity}
+        </span>
+
+        <UpvoteButton
+          complaintId={complaint.id}
+          initialCount={complaint.upvotes?.[0]?.count ?? 0}
+        />
+      </div>
+
+      {complaint.media_urls?.length > 0 && (
+        <div>
+          <h3 className="font-medium mb-2">Evidence</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {complaint.media_urls.map((url: string) => (
+              <img
+                key={url}
+                src={url}
+                alt="Evidence"
+                className="rounded border"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
