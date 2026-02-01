@@ -21,21 +21,24 @@ export async function validateUserEligibility(userId: string): Promise<{
 
     if (error) {
       console.error('Error fetching user profile:', error)
-      return { eligible: false, reason: 'Failed to verify user profile' }
+      return { eligible: false, reason: `Database error: ${error.message}` }
     }
 
     if (!profile) {
-      return { eligible: false, reason: 'User profile not found' }
+      return { eligible: false, reason: 'User profile not found. Please log out and log in again.' }
     }
 
-    if (profile.is_blocked) {
+    if (profile.is_blocked === true) {
       return { 
         eligible: false, 
         reason: 'Your account has been blocked due to spam or policy violations' 
       }
     }
 
-    if (!profile.kyc_verified) {
+    // For now, allow users without KYC verification (set to false to enforce KYC)
+    const REQUIRE_KYC = false // Set to true to enforce KYC verification
+    
+    if (REQUIRE_KYC && profile.kyc_verified !== true) {
       return { 
         eligible: false, 
         reason: 'KYC verification required. Please complete KYC verification to submit complaints.' 

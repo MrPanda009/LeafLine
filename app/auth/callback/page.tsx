@@ -55,11 +55,14 @@ export default function AuthCallback() {
           throw profileError
         }
 
-        // Redirect based on role
+        // Redirect based on role - admin goes to admin portal, others to citizen app
         const userRole = profile?.role || 'citizen'
         console.log('User role:', userRole)
 
-        if (userRole === 'admin' || userRole === 'authority') {
+        if (userRole === 'admin') {
+          console.log('Redirecting to admin portal (authority dashboard)')
+          router.push('/authority-dashboard')
+        } else if (userRole === 'authority') {
           console.log('Redirecting to authority dashboard')
           router.push('/authority-dashboard')
         } else {
