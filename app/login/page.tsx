@@ -214,11 +214,6 @@ export default function LoginPage() {
           </div>
           
           {/* Footer Link */}
-          <div className="pt-4 text-center animate-content">
-            <button className="text-sm font-bold text-[#00CC99] hover:underline hover:text-[#00A37A] transition-colors">
-              Need help signing in?
-            </button>
-          </div>
 
         </div>
       </div>
