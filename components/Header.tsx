@@ -69,7 +69,7 @@ export default function Header({
         LeafLine.
       </Link>
 
-      <nav className="flex gap-6 font-medium items-center">
+      <nav className="flex gap-10 font-medium items-center">
         {['About', 'Contact'].map((item) => (
           <Link 
             key={item} 
@@ -80,7 +80,7 @@ export default function Header({
             {item}
           </Link>
         ))}
-        <div className="nav-item scale-[0.35] origin-center -ml-16">
+        <div className="nav-item scale-[0.395] origin-center -ml-14">
           <LoginToggle />
         </div>
       </nav>
