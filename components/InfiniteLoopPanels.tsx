@@ -25,19 +25,19 @@ const defaultPanels: PanelData[] = [
     description: "Empowering Citizens for a Sustainable Delhi."
   },
   { 
-    title: "Why Delhi Needs CSA", 
+    title: "", 
     bgColor: "bg-dark-green", 
     textColor: "text-mountain-meadow", 
     borderColor: "border-caribbean-green", 
     image: "/Homepage-2.jpeg",
-    description: "Delhi is currently grappling with severe civic challenges, most notably widespread waste mismanagement and rising pollution levels. This struggle is exacerbated by a critical gap in infrastructure: existing complaint redressal systems are fragmented, slow, and fundamentally lack transparency or reliable feedback mechanisms. To bridge this divide, our mission is to replace these inefficient systems with a unified, AI-powered platform for real-time civic engagement, empowering citizens to take an active role in Delhi's sustainable future."
+    description: "",
   },
   { 
     title: "The Impact: Driving a Smarter Delhi", 
     bgColor: "bg-bangladesh-green", 
     textColor: "text-caribbean-green", 
     borderColor: "border-anti-flash", 
-    image: "/Homepage-1.jpeg",
+    image: "/homepage-1.jpeg",
     description: "Our platform is built on proven feasibility to deliver tangible results for the city, starting with a goal of 40% faster issue resolution by streamlining the communication path from the citizen's report to the authority's repair. By providing data-driven insights, we empower local authorities with real-time analytics that allow for more proactive and sustainable urban management interventions. Ultimately, the Civic Sustainability Assistant fosters a Sustainable Delhi by encouraging active citizen participation, transforming the capital into a cleaner, smarter, and more accountable urban center for everyone.."
   },
 ];
