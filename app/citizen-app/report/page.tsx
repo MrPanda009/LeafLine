@@ -216,7 +216,22 @@ export default function ReportPage() {
       recognition.onerror = (event: any) => {
         setIsRecording(false)
         console.error('Speech recognition error:', event.error)
-        alert(`Speech recognition error: ${event.error}. Please try again.`)
+        
+        let errorMessage = 'Speech recognition error. '
+        
+        if (event.error === 'network') {
+          errorMessage = 'Network error. Please check your internet connection and try again.'
+        } else if (event.error === 'not-allowed') {
+          errorMessage = 'Microphone access denied. Please enable microphone permissions in your browser settings.'
+        } else if (event.error === 'no-speech') {
+          errorMessage = 'No speech detected. Please try speaking again.'
+        } else if (event.error === 'aborted') {
+          errorMessage = 'Speech recognition was aborted.'
+        } else {
+          errorMessage = `Speech recognition error: ${event.error}. Please try again.`
+        }
+        
+        alert(errorMessage)
       }
 
       recognition.onend = () => {
@@ -482,7 +497,7 @@ export default function ReportPage() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00DF81] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00DF81] focus:border-transparent text-black"
                 placeholder="Brief description of the issue"
               />
             </div>
@@ -498,7 +513,7 @@ export default function ReportPage() {
                 multiple
                 onChange={handlePhotoChange}
                 disabled={photos.length >= 5}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#00DF81] file:text-[#032221] hover:file:bg-[#00c972] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#00DF81] file:text-[#032221] hover:file:bg-[#00c972] disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
               />
               {photos.length >= 5 && (
                 <p className="text-sm text-orange-600 mt-1">Maximum limit reached. Remove a photo to add more.</p>
@@ -534,7 +549,7 @@ export default function ReportPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00DF81] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00DF81] focus:border-transparent text-black"
                 placeholder="Describe the issue in detail..."
               />
               <button
