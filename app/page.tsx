@@ -95,7 +95,7 @@ export default function AboutPage() {
         <section className="mb-32">
           <div>
             <h1 className="main-title text-[#829c86] text-7xl md:text-9xl font-bold uppercase tracking-tighter mb-16">
-              About Us.
+              Leaf-Line.
             </h1>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-lg leading-relaxed text-[#829c86] font-axiforma">
