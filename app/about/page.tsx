@@ -137,7 +137,7 @@ export default function AboutPage() {
             
             <div className="reveal-image relative h-[400px] bg-pine">
                 <Image 
-                    src="/About-5.png"
+                    src="/About-5.jpeg"
                     alt="Man creating moodboard"
                     fill
                     className="object-cover opacity-90"
