@@ -166,7 +166,7 @@ export default function AuthorityDashboard() {
 
           // Add markers for complaints
           complaints.forEach(complaint => {
-            const color = complaint.status === "Resolved" ? "green" : 
+            const color = complaint.status === "Resolved" ? "#009c5b" : 
                          complaint.status === "In Progress" ? "orange" : "red"
             
             const marker = L.circleMarker(complaint.coordinates as [number, number], {
