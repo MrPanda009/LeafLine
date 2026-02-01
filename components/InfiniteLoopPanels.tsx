@@ -21,7 +21,7 @@ const defaultPanels: PanelData[] = [
     bgColor: "bg-rich-black", 
     textColor: "text-anti-flash", 
     borderColor: "border-bangladesh-green", 
-    image: "/homepage-3.jpg",
+    image: "/Homepage.jpeg",
     description: "Empowering Citizens for a Sustainable Delhi."
   },
   { 
