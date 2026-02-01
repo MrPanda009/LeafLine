@@ -2,10 +2,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
+import { supabase } from "@/lib/supabase";
 
 const LoginToggle = () => {
   const router = useRouter();
   const [isLocked, setIsLocked] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Refs for GSAP targets
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,6 +18,22 @@ const LoginToggle = () => {
   const lockOpenRef = useRef<SVGSVGElement>(null);
   const textRef = useRef<HTMLHeadingElement>(null);
   const tl = useRef<gsap.core.Timeline | null>(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     // Initial timeline for the toggle animation
@@ -65,6 +84,30 @@ const LoginToggle = () => {
       setIsLocked(true);
     }
   };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      setIsLoggingOut(false);
+    }
+  };
+
+  // If user is logged in, show logout button
+  if (isLoggedIn) {
+    return (
+      <button
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+      >
+        {isLoggingOut ? 'Logging out...' : 'LOGOUT'}
+      </button>
+    );
+  }
 
   return (
     <div 

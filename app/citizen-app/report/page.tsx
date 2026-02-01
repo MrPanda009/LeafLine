@@ -312,8 +312,8 @@ export default function ReportPage() {
       console.log('Complaint submitted successfully:', result.complaintId)
       alert('✅ Report submitted successfully!')
       
-      // Navigate to my reports
-      router.push('/citizen-app/my-reports')
+      // Navigate to citizen app dashboard
+      router.push('/citizen-app')
     } catch (error) {
       console.error('Submission error:', error)
       setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred')

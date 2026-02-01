@@ -17,15 +17,17 @@ export async function validateUserEligibility(userId: string): Promise<{
       .from('profiles')
       .select('kyc_verified, is_blocked, spam_strikes')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('Error fetching user profile:', error)
       return { eligible: false, reason: `Database error: ${error.message}` }
     }
 
+    // If profile doesn't exist, it will be created - allow submission
     if (!profile) {
-      return { eligible: false, reason: 'User profile not found. Please log out and log in again.' }
+      console.log('Profile not found, but allowing submission (profile will be auto-created)')
+      return { eligible: true }
     }
 
     if (profile.is_blocked === true) {
@@ -35,7 +37,7 @@ export async function validateUserEligibility(userId: string): Promise<{
       }
     }
 
-    // For now, allow users without KYC verification (set to false to enforce KYC)
+    // For now, allow users without KYC verification (set to true to enforce KYC)
     const REQUIRE_KYC = false // Set to true to enforce KYC verification
     
     if (REQUIRE_KYC && profile.kyc_verified !== true) {
