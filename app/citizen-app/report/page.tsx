@@ -386,26 +386,35 @@ export default function ReportPage() {
       <div className="max-w-4xl mx-auto">
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative">
+            {/* Connecting lines behind circles */}
+            <div className="absolute left-0 right-0 top-5 flex items-center px-5">
+              <div className="flex-1 flex items-center">
+                <div className={`flex-1 h-1 ${
+                  step > 1 ? 'bg-[#00DF81]' : 'bg-gray-300'
+                }`} />
+              </div>
+              <div className="w-10" />
+              <div className="flex-1 flex items-center">
+                <div className={`flex-1 h-1 ${
+                  step > 2 ? 'bg-[#00DF81]' : 'bg-gray-300'
+                }`} />
+              </div>
+            </div>
+            
+            {/* Step circles and labels */}
             {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center flex-1">
+              <div key={s} className="flex flex-col items-center flex-1 relative z-10">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
                   step >= s ? 'bg-[#00DF81] text-[#032221]' : 'bg-gray-300 text-gray-600'
                 }`}>
                   {s}
                 </div>
-                {s < 3 && (
-                  <div className={`flex-1 h-1 mx-2 ${
-                    step > s ? 'bg-[#00DF81]' : 'bg-gray-300'
-                  }`} />
-                )}
+                <span className="text-sm font-medium text-gray-700 mt-2">
+                  {s === 1 ? 'Location' : s === 2 ? 'Evidence' : 'Details'}
+                </span>
               </div>
             ))}
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-sm font-medium text-gray-700">Location</span>
-            <span className="text-sm font-medium text-gray-700">Evidence</span>
-            <span className="text-sm font-medium text-gray-700">Details</span>
           </div>
         </div>
 
