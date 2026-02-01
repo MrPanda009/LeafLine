@@ -68,7 +68,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: 'https://leaf-line-ivory.vercel.app/citizen-app',
         },
       })
 
