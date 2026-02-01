@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useRole } from '@/hooks/useRole'
+import 'leaflet/dist/leaflet.css'
 
 // Development backdoor - set to false in production
 const DEV_BACKDOOR = true
