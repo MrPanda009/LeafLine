@@ -51,64 +51,33 @@ export default function LoginPage() {
   }, [])
 
   useEffect(() => {
-    const checkSessionAndRedirect = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session?.user) {
-          // User is logged in, check their role
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single()
-
-          // Redirect based on role
-          if (profile?.role === 'admin' || profile?.role === 'authority') {
-            router.push('/authority-dashboard')
-          } else {
-            router.push('/citizen-app')
-          }
-        } else {
-          setCheckingSession(false)
-        }
-      } catch (err) {
-        console.error('Error checking session:', err)
-        setCheckingSession(false)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push('/')
       }
     }
-    
-    checkSessionAndRedirect()
+    checkSession()
   }, [router])
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
+      setError(null)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/`,
         },
       })
 
       if (error) throw error
     } catch (err) {
       console.error('Error signing in:', err)
+      setError(err instanceof Error ? err.message : 'Failed to sign in')
       setLoading(false)
     }
-  }
-
-  // Show loading while checking session
-  if (checkingSession) {
-    return (
-      <div className="min-h-screen bg-[#000B01] flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#00DF81]"></div>
-          <p className="text-white mt-4">Loading...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -160,6 +129,12 @@ export default function LoginPage() {
               Let's get you signed in.
             </p>
           </div>
+
+          {error && (
+            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl animate-content">
+              <p className="text-sm font-bold text-red-800 text-center">{error}</p>
+            </div>
+          )}
 
           <div className="space-y-4 animate-content">
             {/* Primary Google Button - Solid and Punchy */}
@@ -238,7 +213,12 @@ export default function LoginPage() {
             </div>
           </div>
           
-
+          {/* Footer Link */}
+          <div className="pt-4 text-center animate-content">
+            <button className="text-sm font-bold text-[#00CC99] hover:underline hover:text-[#00A37A] transition-colors">
+              Need help signing in?
+            </button>
+          </div>
 
         </div>
       </div>
