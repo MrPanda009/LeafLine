@@ -9,7 +9,6 @@ import gsap from 'gsap'
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   
   // Refs for GSAP
   const containerRef = useRef<HTMLDivElement>(null)
@@ -63,7 +62,6 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -75,7 +73,6 @@ export default function LoginPage() {
       if (error) throw error
     } catch (err) {
       console.error('Error signing in:', err)
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
       setLoading(false)
     }
   }
@@ -129,12 +126,6 @@ export default function LoginPage() {
               Let's get you signed in.
             </p>
           </div>
-
-          {error && (
-            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl animate-content">
-              <p className="text-sm font-bold text-red-800 text-center">{error}</p>
-            </div>
-          )}
 
           <div className="space-y-4 animate-content">
             {/* Primary Google Button - Solid and Punchy */}
@@ -213,12 +204,7 @@ export default function LoginPage() {
             </div>
           </div>
           
-          {/* Footer Link */}
-          <div className="pt-4 text-center animate-content">
-            <button className="text-sm font-bold text-[#00CC99] hover:underline hover:text-[#00A37A] transition-colors">
-              Need help signing in?
-            </button>
-          </div>
+
 
         </div>
       </div>
