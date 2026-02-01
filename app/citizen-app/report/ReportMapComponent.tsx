@@ -67,5 +67,5 @@ export default function ReportMapComponent({ location, onLocationSelect }: Repor
     mapRef.current.setView([location.lat, location.lng], 15)
   }, [location])
 
-  return <div ref={mapContainer} className="w-full h-96 rounded-lg mb-4" />
+  return <div ref={mapContainer} className="w-full h-64 rounded-lg mb-4" />
 }

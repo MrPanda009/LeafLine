@@ -72,7 +72,7 @@ export function useRole(): UseRoleReturn {
       } catch (err) {
         console.error('Error fetching user role:', err)
         setError(err instanceof Error ? err : new Error('Failed to fetch user role'))
-        setRole('admin') // Default to citizen on error
+        setRole('citizen') // Default to citizen on error
       } finally {
         setLoading(false)
       }

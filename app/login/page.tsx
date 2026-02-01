@@ -9,6 +9,7 @@ import gsap from 'gsap'
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   // Refs for GSAP
   const containerRef = useRef<HTMLDivElement>(null)
@@ -50,13 +51,34 @@ export default function LoginPage() {
   }, [])
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        router.push('/')
+    const checkSessionAndRedirect = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          // User is logged in, check their role
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+
+          // Redirect based on role
+          if (profile?.role === 'admin' || profile?.role === 'authority') {
+            router.push('/authority-dashboard')
+          } else {
+            router.push('/citizen-app')
+          }
+        } else {
+          setCheckingSession(false)
+        }
+      } catch (err) {
+        console.error('Error checking session:', err)
+        setCheckingSession(false)
       }
     }
-    checkSession()
+    
+    checkSessionAndRedirect()
   }, [router])
 
   const handleGoogleSignIn = async () => {
@@ -66,7 +88,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
@@ -75,6 +97,18 @@ export default function LoginPage() {
       console.error('Error signing in:', err)
       setLoading(false)
     }
+  }
+
+  // Show loading while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-[#000B01] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#00DF81]"></div>
+          <p className="text-white mt-4">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
