@@ -151,10 +151,10 @@ export default function AboutPage() {
             {/* Team Grid */}
             <div className="md:col-span-5 grid grid-cols-2 gap-4 h-fit">
                <div className="reveal-image relative h-48 md:h-64 bg-pine">
-                   <Image src="/About-4.png" alt="Team member" fill className="object-contain"  />
+                   <Image src="/About-4.jpeg" alt="Team member" fill className="object-contain"  />
                </div>
                <div className="reveal-image relative h-48 md:h-64 bg-pine translate-y-12">
-                   <Image src="/About-3.png" alt="Team member" fill className="object-contain" />
+                   <Image src="/About-3.jpeg" alt="Team member" fill className="object-contain" />
                </div>
                <div className="reveal-image relative h-48 md:h-64 bg-pine col-span-2 mt-12">
                    <Image src="/About-2.jpeg" alt="Team member" fill className="object-contain" />
