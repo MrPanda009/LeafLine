@@ -23,7 +23,7 @@ export default function Header({
   scrolledBgColor = "#032221",
   scrolledAccentColor = "#00DF81",
   initialNavColor = "#000000",
-  scrolledNavColor = "#FFFFFF"
+  scrolledNavColor
 }: HeaderProps) {
   const container = useRef(null);
 
@@ -69,7 +69,7 @@ export default function Header({
         LeafLine.
       </Link>
 
-      <nav className="flex gap-10 font-medium items-center">
+      <nav className="flex gap-8 font-medium items-center ml-auto">
         {['About', 'Contact'].map((item) => (
           <Link 
             key={item} 
@@ -80,8 +80,8 @@ export default function Header({
             {item}
           </Link>
         ))}
-        <div className="nav-item scale-[0.395] origin-center -ml-14">
-          <LoginToggle />
+        <div className="ml-4 nav-item">
+          <LoginToggle compact />
         </div>
       </nav>
     </header>

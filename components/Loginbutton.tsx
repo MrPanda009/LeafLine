@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { supabase } from "@/lib/supabase";
 
-const LoginToggle = () => {
+type LoginToggleProps = {
+  compact?: boolean;
+};
+
+const LoginToggle = ({ compact = false }: LoginToggleProps) => {
   const router = useRouter();
   const [isLocked, setIsLocked] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -37,13 +41,26 @@ const LoginToggle = () => {
 
   useEffect(() => {
     // Initial timeline for the toggle animation
-    tl.current = gsap.timeline({ 
-      paused: true, 
-      defaults: { ease: "power3.inOut", duration: 0.4 } 
+    // compute travel distance based on rendered sizes so compact variant works
+    const trackEl = trackRef.current;
+    const knobEl = knobRef.current;
+
+    tl.current = gsap.timeline({
+      paused: true,
+      defaults: { ease: "power3.inOut", duration: 0.4 }
     });
 
+    let moveX = -116; // fallback
+    if (trackEl && knobEl) {
+      const trackRect = trackEl.getBoundingClientRect();
+      const knobRect = knobEl.getBoundingClientRect();
+      // subtract a small padding so knob doesn't hug the border
+      const padding = 6;
+      moveX = -(trackRect.width - knobRect.width - padding);
+    }
+
     tl.current
-      .to(knobRef.current, { x: -116 }, 0)
+      .to(knobRef.current, { x: moveX }, 0)
       .to(trackRef.current, { backgroundColor: "#00F196", borderColor: "#022221" }, 0)
       .to(lockClosedRef.current, { opacity: 0, scale: 0.5 }, 0)
       .fromTo(lockOpenRef.current, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1 }, 0.1)
@@ -102,7 +119,10 @@ const LoginToggle = () => {
       <button
         onClick={handleLogout}
         disabled={isLoggingOut}
-        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+        className={compact ?
+          "px-3 py-1 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow" :
+          "px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+        }
       >
         {isLoggingOut ? 'Logging out...' : 'LOGOUT'}
       </button>
@@ -112,11 +132,17 @@ const LoginToggle = () => {
   return (
     <div 
       ref={containerRef}
-      className="flex flex-row items-center gap-6 p-6 bg-dark-green/20 rounded-[30px] border border-bangladesh-green/30 shadow-2xl"
+      className={compact ?
+        "flex flex-row items-center gap-3 p-2 bg-dark-green/20 rounded-lg border border-bangladesh-green/30 shadow" :
+        "flex flex-row items-center gap-6 p-6 bg-dark-green/20 rounded-[30px] border border-bangladesh-green/30 shadow-2xl"
+      }
     >
       <h1 
           ref={textRef}
-          className="text-5xl font-black tracking-tighter text-caribbean-green select-none"
+          className={compact ?
+            "text-xs font-black tracking-tighter text-caribbean-green select-none whitespace-nowrap" :
+            "text-5xl font-black tracking-tighter text-caribbean-green select-none"
+          }
           style={{ fontFamily: 'var(--font-axiforma), sans-serif' }}
         >
           LOGIN
@@ -125,11 +151,17 @@ const LoginToggle = () => {
         <div 
           ref={trackRef}
           onClick={handleToggle}
-          className="relative w-[180px] h-[64px] bg-bangladesh-green border-[4px] border-dark-green rounded-full cursor-pointer shadow-inner"
+          className={compact ?
+            "relative w-14 h-7 bg-bangladesh-green border-[3px] border-dark-green rounded-full cursor-pointer shadow-inner" :
+            "relative w-[180px] h-[64px] bg-bangladesh-green border-[4px] border-dark-green rounded-full cursor-pointer shadow-inner"
+          }
         >
           <div 
             ref={knobRef}
-            className="absolute top-1 right-1 w-[48px] h-[48px] bg-anti-flash rounded-full flex items-center justify-center shadow-xl z-10"
+            className={compact ?
+              "absolute top-0.5 right-0.5 w-5 h-5 bg-anti-flash rounded-full flex items-center justify-center shadow z-10" :
+              "absolute top-1 right-1 w-[48px] h-[48px] bg-anti-flash rounded-full flex items-center justify-center shadow-xl z-10"
+            }
           >
             <div className="relative w-6 h-6">
               <svg 
