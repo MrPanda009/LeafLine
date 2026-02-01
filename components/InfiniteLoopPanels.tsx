@@ -19,7 +19,7 @@ const defaultPanels: PanelData[] = [
   { 
     title: "Leaf-Line", 
     bgColor: "bg-rich-black", 
-    textColor: "text-anti-flash", 
+    textColor: "text-black", 
     borderColor: "border-bangladesh-green", 
     image: "/Homepage.jpeg",
     description: "Empowering Citizens for a Sustainable Delhi."
@@ -27,7 +27,7 @@ const defaultPanels: PanelData[] = [
   { 
     title: "", 
     bgColor: "bg-dark-green", 
-    textColor: "text-mountain-meadow", 
+    textColor: "text-black", 
     borderColor: "border-caribbean-green", 
     image: "/Homepage-2.jpeg",
     description: "",
@@ -35,7 +35,7 @@ const defaultPanels: PanelData[] = [
   { 
     title: "The Impact: Driving a Smarter Delhi", 
     bgColor: "bg-bangladesh-green", 
-    textColor: "text-caribbean-green", 
+    textColor: "text-black", 
     borderColor: "border-anti-flash", 
     image: "/homepage-1.jpeg",
     description: "Our platform is built on proven feasibility to deliver tangible results for the city, starting with a goal of 40% faster issue resolution by streamlining the communication path from the citizen's report to the authority's repair. By providing data-driven insights, we empower local authorities with real-time analytics that allow for more proactive and sustainable urban management interventions. Ultimately, the Civic Sustainability Assistant fosters a Sustainable Delhi by encouraging active citizen participation, transforming the capital into a cleaner, smarter, and more accountable urban center for everyone.."
@@ -99,7 +99,7 @@ const StackedSections = ({ panels = defaultPanels }: { panels?: PanelData[] }) =
               {section.title}
             </h1>
             <div className={`h-1 w-24 mx-auto bg-caribbean-green`} />
-            <p className="mt-8 text-anti-flash/70 max-w-md mx-auto">
+            <p className="mt-8 text-black max-w-md mx-auto">
               {section.description}
             </p>
           </div>
