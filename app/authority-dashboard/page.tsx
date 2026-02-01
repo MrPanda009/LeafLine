@@ -152,6 +152,16 @@ export default function AuthorityDashboard() {
     }
   }, [role, loading, user, router])
 
+  // Filter complaints
+  const filteredComplaints = complaints.filter(complaint => {
+    const matchesStatus = filterStatus === "All" || complaint.status === filterStatus
+    const matchesPriority = filterPriority === "All" || complaint.priority === filterPriority
+    const matchesSearch = complaint.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         complaint.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         complaint.category.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesStatus && matchesPriority && matchesSearch
+  })
+
   // Initialize map
   useEffect(() => {
     if (view === "map" && mapRef.current && !mapInstanceRef.current && typeof window !== 'undefined') {
@@ -163,34 +173,6 @@ export default function AuthorityDashboard() {
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
           }).addTo(mapInstanceRef.current)
-
-          // Add markers for complaints
-          complaints.forEach(complaint => {
-            const color = complaint.status === "Resolved" ? "#009c5b" : 
-                         complaint.status === "In Progress" ? "orange" : "red"
-            
-            const marker = L.circleMarker(complaint.coordinates as [number, number], {
-              radius: 8,
-              fillColor: color,
-              color: "#fff",
-              weight: 2,
-              opacity: 1,
-              fillOpacity: 0.8
-            }).addTo(mapInstanceRef.current)
-
-            marker.bindPopup(`
-              <div style="font-family: Inter, sans-serif;">
-                <strong>${complaint.id}</strong><br/>
-                ${complaint.category}<br/>
-                ${complaint.location}<br/>
-                <span style="color: ${color}; font-weight: bold;">${complaint.status}</span>
-              </div>
-            `)
-
-            marker.on('click', () => {
-              setSelectedComplaint(complaint)
-            })
-          })
         }
       })
     }
@@ -201,7 +183,51 @@ export default function AuthorityDashboard() {
         mapInstanceRef.current = null
       }
     }
-  }, [view, complaints])
+  }, [view])
+
+  // Update map markers when filters change
+  useEffect(() => {
+    if (view === "map" && mapInstanceRef.current && typeof window !== 'undefined') {
+      import('leaflet').then((L) => {
+        if (!mapInstanceRef.current) return
+
+        // Clear existing markers
+        mapInstanceRef.current.eachLayer((layer: any) => {
+          if (layer instanceof L.CircleMarker) {
+            mapInstanceRef.current?.removeLayer(layer)
+          }
+        })
+
+        // Add markers for filtered complaints
+        filteredComplaints.forEach(complaint => {
+          const color = complaint.status === "Resolved" ? "#009c5b" : 
+                       complaint.status === "In Progress" ? "orange" : "red"
+          
+          const marker = L.circleMarker(complaint.coordinates as [number, number], {
+            radius: 8,
+            fillColor: color,
+            color: "#fff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(mapInstanceRef.current!)
+
+          marker.bindPopup(`
+            <div style="font-family: Inter, sans-serif;">
+              <strong>${complaint.id}</strong><br/>
+              ${complaint.category}<br/>
+              ${complaint.location}<br/>
+              <span style="color: ${color}; font-weight: bold;">${complaint.status}</span>
+            </div>
+          `)
+
+          marker.on('click', () => {
+            setSelectedComplaint(complaint)
+          })
+        })
+      })
+    }
+  }, [view, filteredComplaints])
 
   const handleSignOut = async () => {
     try {
@@ -213,15 +239,6 @@ export default function AuthorityDashboard() {
       setSigningOut(false)
     }
   }
-
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesStatus = filterStatus === "All" || complaint.status === filterStatus
-    const matchesPriority = filterPriority === "All" || complaint.priority === filterPriority
-    const matchesSearch = complaint.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.category.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesStatus && matchesPriority && matchesSearch
-  })
 
   const getStatusColor = (status: string) => {
     switch(status) {

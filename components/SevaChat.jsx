@@ -61,22 +61,77 @@ export default function SevaAssistant() {
     }
   }, [messages, isOpen]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    const newUserMsg = { id: Date.now(), text: inputValue, sender: "user" };
+    const userMessage = inputValue.trim();
+    const newUserMsg = { id: Date.now(), text: userMessage, sender: "user" };
     setMessages((prev) => [...prev, newUserMsg]);
     setInputValue("");
 
-    setTimeout(() => {
-      const newBotMsg = { 
+    try {
+      // Build conversation history for context
+      const conversationHistory = messages
+        .filter(msg => msg.sender !== 'bot' || msg.id !== 1) // Exclude initial greeting
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }));
+      
+      // Add the new user message
+      conversationHistory.push({
+        role: 'user',
+        content: userMessage
+      });
+
+      // Call the backend API
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: conversationHistory }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from server');
+      }
+
+      // Read the streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botResponse = '';
+      const botMsgId = Date.now() + 1;
+
+      // Add empty bot message that will be updated
+      setMessages((prev) => [...prev, { id: botMsgId, text: '', sender: 'bot' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        botResponse += chunk;
+        
+        // Update the bot message with streaming content
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.id === botMsgId 
+              ? { ...msg, text: botResponse } 
+              : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMsg = { 
         id: Date.now() + 1, 
-        text: "I can help check your account status.", 
+        text: "Sorry, I'm having trouble connecting. Please make sure the backend is running on port 8000.", 
         sender: "bot" 
       };
-      setMessages((prev) => [...prev, newBotMsg]);
-    }, 1000);
+      setMessages((prev) => [...prev, errorMsg]);
+    }
   };
 
   return (

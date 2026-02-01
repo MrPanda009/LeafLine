@@ -18,7 +18,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+# Get Groq API key from environment or prompt user
+groq_api_key = os.getenv("GROQ_API_KEY")
+if not groq_api_key:
+    print("\n⚠️  GROQ_API_KEY not found in environment variables")
+    groq_api_key = input("Please enter your Groq API key: ").strip()
+    if not groq_api_key:
+        print("❌ API key is required to run the server.")
+        exit(1)
+    print("✅ API key received!\n")
+
+client = AsyncGroq(api_key=groq_api_key)
 
 class ChatMessage(BaseModel):
     role: str
