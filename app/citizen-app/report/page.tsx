@@ -3,14 +3,14 @@
 import { useState, useEffect, ComponentType } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { supabase } from '@/lib/supabase'
 import { useRole } from '@/hooks/useRole'
-
-interface Category {
-  id: string
-  name: string
-  icon: string
-}
+import { fetchCategories } from '@/lib/services/categoryService'
+import { 
+  submitComplaintWorkflow, 
+  upvoteComplaint,
+  generateDigipin 
+} from '@/lib/services/complaintService'
+import { Category, DuplicateCheckResult } from '@/types/database'
 
 type Step = 1 | 2 | 3
 
@@ -37,92 +37,145 @@ export default function ReportPage() {
   const [title, setTitle] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [subcategories, setSubcategories] = useState<Category[]>([])
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('')
   const [severity, setSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium')
   const [isRecording, setIsRecording] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [duplicateCheck, setDuplicateCheck] = useState<any>(null)
+  const [duplicateCheck, setDuplicateCheck] = useState<DuplicateCheckResult | null>(null)
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesError, setCategoriesError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isEligible, setIsEligible] = useState<boolean>(true)
+  const [eligibilityMessage, setEligibilityMessage] = useState<string>('')
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
 
-  // Fetch categories
+  // Fetch categories using service
   useEffect(() => {
-    async function fetchCategories() {
-      try {
-        console.log('Fetching categories from database...')
-        setCategoriesLoading(true)
-        setCategoriesError(null)
-        
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id, name, icon')
-          .order('name')
+    async function loadCategories() {
+      setCategoriesLoading(true)
+      setCategoriesError(null)
+      
+      const result = await fetchCategories()
+      
+      if (result.success) {
+        // Filter parent categories (no parent_id)
+        const parentCategories = result.categories.filter(cat => !cat.parent_id)
+        setCategories(parentCategories)
+      } else {
+        setCategoriesError(result.error || 'Failed to load categories')
+      }
+      
+      setCategoriesLoading(false)
+    }
 
-        if (error) {
-          console.error('Error fetching categories:', error)
-          setCategoriesError(`Failed to load categories: ${error.message}`)
-          
-          // Check if table doesn't exist
-          if (error.code === '42P01') {
-            setCategoriesError('Categories table does not exist. Please run the database setup.')
-          }
-          return
-        }
+    loadCategories()
+  }, [])
 
-        if (!data || data.length === 0) {
-          console.warn('No categories found in database')
-          setCategoriesError('No categories available. Please add categories to the database.')
-          setCategories([])
-        } else {
-          console.log(`Loaded ${data.length} categories:`, data)
-          setCategories(data)
+  // Load subcategories when category is selected
+  useEffect(() => {
+    async function loadSubcategories() {
+      if (!selectedCategory) {
+        setSubcategories([])
+        setSelectedSubcategory('')
+        return
+      }
+
+      const result = await fetchCategories()
+      if (result.success) {
+        // Filter subcategories for selected category
+        const subs = result.categories.filter(cat => cat.parent_id === selectedCategory)
+        setSubcategories(subs)
+        if (subs.length === 0) {
+          // No subcategories, use parent category as final selection
+          setSelectedSubcategory('')
         }
-      } catch (error) {
-        console.error('Exception fetching categories:', error)
-        setCategoriesError('An unexpected error occurred while loading categories')
-      } finally {
-        setCategoriesLoading(false)
       }
     }
 
-    fetchCategories()
-  }, [])
+    loadSubcategories()
+  }, [selectedCategory])
 
   // Get GPS location
   const handleGetGPS = () => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude
-          const lng = position.coords.longitude
-          setLocation({ lat, lng })
-          setDigipin(`DL-${Math.floor(lat * 1000)}-${Math.floor(lng * 1000)}`)
-        },
-        (error) => {
-          alert('Unable to get GPS location: ' + error.message)
-        }
-      )
-    } else {
-      alert('Geolocation is not supported by your browser')
+    if (!('geolocation' in navigator)) {
+      alert('❌ Geolocation is not supported by your browser')
+      return
     }
+
+    setIsGettingLocation(true)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+        setLocation({ lat, lng })
+        // Use the service function to generate DIGIPIN
+        setDigipin(generateDigipin(lat, lng))
+        setIsGettingLocation(false)
+        console.log('Location obtained:', { lat, lng, accuracy: position.coords.accuracy })
+      },
+      (error) => {
+        setIsGettingLocation(false)
+        console.error('Geolocation error:', error)
+        
+        let errorMessage = 'Unable to get your location. '
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'You denied the request for location access. Please enable location permissions in your browser settings.'
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable. Please try again or select location on map.'
+            break
+          case error.TIMEOUT:
+            errorMessage += 'The request to get your location timed out. Please try again.'
+            break
+          default:
+            errorMessage += error.message || 'An unknown error occurred.'
+        }
+        
+        alert(errorMessage)
+      },
+      {
+        enableHighAccuracy: true, // Request 10m accuracy
+        timeout: 10000,
+        maximumAge: 0
+      }
+    )
   }
 
   // Handle map click
   const handleMapClick = (lat: number, lng: number) => {
     setLocation({ lat, lng })
-    setDigipin(`DL-${Math.floor(lat * 1000)}-${Math.floor(lng * 1000)}`)
+    setDigipin(generateDigipin(lat, lng))
   }
 
-  // Handle photo upload
+  // Handle photo upload (Max 5 photos)
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files)
+      
+      // Validate total count
       if (photos.length + newFiles.length > 5) {
         alert('Maximum 5 photos allowed')
-        e.target.value = '' // Reset input
+        e.target.value = ''
         return
       }
+
+      // Validate file types and sizes
+      const invalidFiles = newFiles.filter(file => 
+        !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024
+      )
+
+      if (invalidFiles.length > 0) {
+        alert('All files must be images under 5MB')
+        e.target.value = ''
+        return
+      }
+
       setPhotos([...photos, ...newFiles])
-      e.target.value = '' // Reset input to allow same file again
+      e.target.value = ''
     }
   }
 
@@ -181,163 +234,111 @@ export default function ReportPage() {
 
   // Check for duplicates
   const checkDuplicates = async () => {
-    if (!location) return
-
-    try {
-      const { data, error } = await supabase
-        .rpc('check_for_duplicate_report', {
-          lat: location.lat,
-          lng: location.lng,
-          report_title: title,
-          category_id: selectedCategory
-        })
-
-      if (error) {
-        console.error('Duplicate check error:', error)
-        return null
-      }
-
-      return data
-    } catch (error) {
-      console.error('Error checking duplicates:', error)
-      return null
-    }
+    // This function is now handled by the service
+    // Kept for compatibility but unused
+    return null
   }
 
-  // Submit report
+  // Submit report using complete workflow
   const handleSubmit = async () => {
+    // Clear previous errors
+    setSubmitError(null)
+
     // Validate required fields
     if (!location) {
-      alert('Please select a location')
+      setSubmitError('Please select a location')
       return
     }
     
     if (!title || !title.trim()) {
-      alert('Please enter a title')
+      setSubmitError('Please enter a title')
       return
     }
     
     if (!description || !description.trim()) {
-      alert('Please enter a description')
+      setSubmitError('Please enter a description')
       return
     }
     
     if (!selectedCategory) {
-      alert('Please select a category')
+      setSubmitError('Please select a category')
       return
     }
 
-    // Check if user is logged in (skip in dev mode)
+    // Check if subcategories exist and one is selected
+    if (subcategories.length > 0 && !selectedSubcategory) {
+      setSubmitError('Please select a subcategory')
+      return
+    }
+
+    // Check if user is logged in
     if (!user) {
-      alert('Please log in to submit a report')
+      setSubmitError('Please log in to submit a report')
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      console.log('Submitting report...')
+      console.log('Submitting complaint via workflow...')
       
-      // Check for duplicates (skip if RPC doesn't exist)
-      try {
-        const duplicate = await checkDuplicates()
-        
-        if (duplicate && duplicate.length > 0) {
-          setDuplicateCheck(duplicate[0])
+      // Use the complete workflow from service
+      const result = await submitComplaintWorkflow({
+        userId: user.id,
+        title: title.trim(),
+        description: description.trim(),
+        categoryId: selectedSubcategory || selectedCategory, // Use subcategory if available
+        severity: severity,
+        latitude: location.lat,
+        longitude: location.lng,
+        photos: photos
+      })
+
+      if (!result.success) {
+        // Check if it's a duplicate
+        if (result.duplicate) {
+          setDuplicateCheck(result.duplicate)
           setIsSubmitting(false)
           return
         }
-      } catch (dupError) {
-        console.warn('Duplicate check failed, continuing with submission:', dupError)
-        // Continue with submission even if duplicate check fails
-      }
 
-      // Upload photos
-      const photoUrls: string[] = []
-      if (photos.length > 0) {
-        console.log(`Uploading ${photos.length} photos...`)
-        for (const photo of photos) {
-          try {
-            const fileName = `${user.id}/${Date.now()}_${photo.name}`
-            const { data, error } = await supabase.storage
-              .from('complaint-images')
-              .upload(fileName, photo)
-
-            if (error) {
-              console.error('Photo upload error:', error)
-              // Continue even if one photo fails
-              continue
-            }
-
-            const { data: urlData } = supabase.storage
-              .from('complaint-images')
-              .getPublicUrl(fileName)
-
-            photoUrls.push(urlData.publicUrl)
-            console.log('Photo uploaded:', urlData.publicUrl)
-          } catch (photoError) {
-            console.error('Error uploading photo:', photoError)
-          }
-        }
-      }
-
-      // Create complaint
-      console.log('Creating complaint record...')
-      const { error: insertError } = await supabase
-        .from('complaints')
-        .insert({
-          reporter_id: user.id,
-          title: title.trim(),
-          description: description.trim(),
-          category_id: selectedCategory,
-          severity,
-          location_lat: location.lat,
-          location_long: location.lng,
-          digipin,
-          images: photoUrls,
-          status: 'open'
-        })
-
-      if (insertError) {
-        console.error('Error creating complaint:', insertError)
-        alert(`Failed to submit report: ${insertError.message}`)
+        // Show error message
+        setSubmitError(result.error || 'Failed to submit complaint')
+        setIsSubmitting(false)
         return
       }
 
-      console.log('Report submitted successfully!')
-      alert('Report submitted successfully!')
+      // Success!
+      console.log('Complaint submitted successfully:', result.complaintId)
+      alert('✅ Report submitted successfully!')
+      
+      // Navigate to my reports
       router.push('/citizen-app/my-reports')
     } catch (error) {
       console.error('Submission error:', error)
-      alert(`An error occurred while submitting: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Handle upvote existing
+  // Handle upvote existing complaint
   const handleUpvoteExisting = async () => {
     if (!duplicateCheck || !user) return
 
     try {
-      // Add upvote logic here
-      const { error } = await supabase
-        .from('complaint_votes')
-        .insert({
-          complaint_id: duplicateCheck.id,
-          user_id: user.id
-        })
+      const result = await upvoteComplaint(duplicateCheck.id, user.id)
 
-      if (error && error.code !== '23505') { // Ignore duplicate key error
-        console.error('Upvote error:', error)
-        alert('Failed to upvote')
+      if (!result.success) {
+        alert(result.error || 'Failed to upvote')
         return
       }
 
-      alert('Upvoted existing report!')
+      alert('✅ Upvoted existing report!')
       router.push('/citizen-app/dashboard')
     } catch (error) {
       console.error('Upvote error:', error)
+      alert('Failed to upvote complaint')
     }
   }
 
@@ -414,10 +415,22 @@ export default function ReportPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Select Location</h2>
             
             <button
+              type="button"
               onClick={handleGetGPS}
-              className="mb-4 w-full px-6 py-3 bg-[#00DF81] text-[#032221] font-medium rounded-lg hover:bg-[#00c972] transition-colors"
+              disabled={isGettingLocation}
+              className="mb-4 w-full px-6 py-3 bg-[#00DF81] text-[#032221] font-medium rounded-lg hover:bg-[#00c972] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              📍 Use My Current Location
+              {isGettingLocation ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#032221]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Getting Location...
+                </span>
+              ) : (
+                '📍 Use My Current Location'
+              )}
             </button>
 
             <ReportMapComponent 
@@ -546,6 +559,13 @@ export default function ReportPage() {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Categorize Issue</h2>
 
+            {/* Error Display */}
+            {submitError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm font-medium">⚠️ {submitError}</p>
+              </div>
+            )}
+
             {/* Category */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -576,7 +596,11 @@ export default function ReportPage() {
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id)
+                        setSelectedSubcategory('')
+                      }}
                       className={`p-4 rounded-lg border-2 transition-colors ${
                         selectedCategory === cat.id
                           ? 'border-[#00DF81] bg-[#00DF81]/10'
@@ -591,6 +615,32 @@ export default function ReportPage() {
               )}
             </div>
 
+            {/* Subcategory */}
+            {selectedCategory && subcategories.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategory *
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {subcategories.map((subcat) => (
+                    <button
+                      key={subcat.id}
+                      type="button"
+                      onClick={() => setSelectedSubcategory(subcat.id)}
+                      className={`p-4 rounded-lg border-2 transition-colors ${
+                        selectedSubcategory === subcat.id
+                          ? 'border-[#00DF81] bg-[#00DF81]/10'
+                          : 'border-gray-300 hover:border-[#829c86]'
+                      }`}
+                    >
+                      <div className="text-3xl mb-2">{subcat.icon}</div>
+                      <div className="text-sm font-medium text-gray-900">{subcat.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Severity */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -600,6 +650,7 @@ export default function ReportPage() {
                 {(['low', 'medium', 'high', 'critical'] as const).map((sev) => (
                   <button
                     key={sev}
+                    type="button"
                     onClick={() => setSeverity(sev)}
                     className={`px-4 py-3 rounded-lg font-medium transition-colors ${
                       severity === sev
@@ -614,21 +665,37 @@ export default function ReportPage() {
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                L1 (Low) → L2 (Medium) → L3 (High) → L4 (Critical)
+              </p>
             </div>
 
             <div className="flex gap-4">
               <button
+                type="button"
                 onClick={() => setStep(2)}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Back
               </button>
               <button
+                type="button"
                 onClick={handleSubmit}
-                disabled={!selectedCategory || isSubmitting}
+                disabled={!selectedCategory || (subcategories.length > 0 && !selectedSubcategory) || isSubmitting}
                 className="flex-1 px-6 py-3 bg-[#00DF81] text-[#032221] font-medium rounded-lg hover:bg-[#00c972] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#032221]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : (
+                  'Submit Report'
+                )}
               </button>
             </div>
           </div>
