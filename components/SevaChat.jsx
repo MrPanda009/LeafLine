@@ -128,7 +128,7 @@ export default function SevaAssistant() {
       console.error('Chat error:', error);
       const errorMsg = { 
         id: Date.now() + 1, 
-        text: "Sorry, I'm having trouble connecting. Please make sure the backend is running on port 8000.", 
+        text: "Sorry, I'm having trouble connecting to the backend. Please try again later.", 
         sender: "bot" 
       };
       setMessages((prev) => [...prev, errorMsg]);
