@@ -30,12 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-# .env file is tracked for private repo - will flush API keys before going public
-# .env
+# env files
+.env
 .env.local
 .env*.local
 # Note: .env.shared is committed as it contains non-sensitive config
+# Note: .env.example is committed as a template (no secrets)
 
 # vercel
 .vercel
@@ -43,3 +43,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
